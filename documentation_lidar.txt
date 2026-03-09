@@ -1,0 +1,16 @@
+#what is lidar
+
+Robots camera is not that great for estimations of distances. Cameras 
+rely on extra light source
+Computers need a sensor to estimate distances and images.
+
+A lidar measures with photons and emits some light.
+
+The time to travel there and back is how it measures the distances.
+A camera is gives photographs but lidar measures directly how far away it is.
+
+passive versus active sensor.
+Lidar is an active sensor- laser emitted and bounces back. 
+It tells you how far away objects are
+
+

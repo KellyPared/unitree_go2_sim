@@ -1,0 +1,154 @@
+GO2 PyBullet Simulator Setup (macOS)
+
+This document explains how to configure the GO2 PyBullet simulator on macOS using a stable Python environment.
+
+The simulator depends on several robotics and scientific computing libraries that can be difficult to install using pip alone. The most reliable approach on macOS is to install PyBullet through conda-forge.
+
+Why This Setup Is Needed
+
+The simulator depends on:
+
+pybullet
+
+scipy
+
+opencv-python
+
+pillow
+
+Installing pybullet with pip often fails on macOS because:
+
+PyPI may not provide compatible wheels for your Python/macOS combination
+
+pip attempts to compile the physics engine locally
+
+compilation requires a full C++ toolchain and specific build flags
+
+To avoid these issues, we install pybullet using conda-forge, which provides prebuilt binaries.
+
+1. Install Miniforge (Conda)
+
+Miniforge is a lightweight Conda distribution that uses the conda-forge package ecosystem.
+
+Download and install:
+
+curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
+bash Miniforge3-MacOSX-arm64.sh
+
+Restart your terminal after installation.
+
+2. Initialize Conda
+
+If you chose not to auto-initialize conda during installation, run:
+
+eval "$(/Users/kelly.paredes/miniforge3/bin/conda shell.zsh hook)"
+
+Verify installation:
+
+conda --version
+
+Example output:
+
+conda 26.x.x
+3. Create a Simulator Environment
+
+Create a dedicated environment for the GO2 simulator:
+
+conda create -n go2sim python=3.11
+
+Activate the environment:
+
+conda activate go2sim
+
+Verify the interpreter:
+
+which python
+
+Expected path:
+
+/Users/kelly.paredes/miniforge3/envs/go2sim/bin/python
+4. Install PyBullet
+
+Install the physics engine using conda-forge:
+
+conda install -c conda-forge pybullet
+
+This installs a precompiled version of PyBullet and avoids build errors.
+
+5. Install Additional Dependencies
+
+The simulator requires additional Python packages:
+
+python -m pip install scipy opencv-python pillow
+
+These provide:
+
+Library	Purpose
+scipy	spatial math and rotations
+opencv-python	computer vision utilities
+pillow	image processing
+6. Run the Simulator
+
+Navigate to the project directory:
+
+cd ~/Downloads/go2_simulator_applications-main
+
+Run the simulator test:
+
+python _00_test_pybullet.py
+
+If successful, the PyBullet simulator window will launch.
+
+7. Use the Environment in VS Code
+
+To ensure VS Code uses the correct Python interpreter:
+
+Open the simulator folder in VS Code
+
+Press:
+
+Cmd + Shift + P
+
+Select:
+
+Python: Select Interpreter
+
+Choose the interpreter:
+
+/Users/kelly.paredes/miniforge3/envs/go2sim/bin/python
+8. Update Project Requirements
+
+To save the exact dependency versions used:
+
+pip freeze > requirements.txt
+
+This allows others to reproduce the same environment.
+
+Key Lessons
+Virtual environments cannot change Python versions
+
+A venv created with Python 3.13 cannot be converted to Python 3.11.
+
+Robotics libraries often lag behind the newest Python
+
+Most robotics stacks work best with:
+
+Python 3.10 – 3.11
+Conda simplifies compiled library installation
+
+Conda-forge provides reliable builds for:
+
+pybullet
+
+scipy
+
+numpy
+
+robotics libraries
+
+Final Working Environment
+Component	Version
+Python	3.11
+Environment manager	Conda (Miniforge)
+Physics engine	PyBullet
+Scientific stack	scipy, opencv, pillow

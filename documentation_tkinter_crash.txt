@@ -1,0 +1,173 @@
+Tkinter Issues on macOS (GO2 Simulator)
+Overview
+
+The GO2 factory simulator includes a Tkinter-based control panel that displays camera feeds and allows manual control of the robot. On macOS systems, this GUI may crash during execution with errors such as:
+
+Abort trap: 6
+RuntimeError: Too early to create image: no default root window
+
+or crash reports referencing:
+
+_tkinter.cpython-311-darwin.so
+libtk8.6.dylib
+objc_exception_throw
+
+These failures are related to the interaction between Tkinter, macOS GUI frameworks, and the Python environment used to run the simulator.
+
+Root Cause
+
+The simulator’s FactoryScene class creates a Tkinter window to display:
+
+overhead camera images
+
+lidar depth images
+
+first-person camera feeds
+
+control buttons for robot motion
+
+This occurs in:
+
+utils/factory_scene_utils.py
+
+Specifically:
+
+import tkinter as tk
+from PIL import Image, ImageTk
+
+self.window = tk.Tk()
+
+The Tkinter GUI runs concurrently with the PyBullet simulation loop.
+
+On macOS, this configuration can fail because:
+
+Tkinter requires a macOS GUI thread
+
+The Python interpreter may not be launched with the correct GUI wrapper
+
+Some conda builds of Tk conflict with Apple’s native window system
+
+Tk image objects (ImageTk.PhotoImage) require an initialized root window
+
+When these conditions are not satisfied, Tk throws an Objective-C exception and the process terminates.
+
+Symptoms
+
+Typical symptoms include:
+
+Immediate crash
+Abort trap: 6
+Crash report referencing Tk
+libtk8.6.dylib
+_tkinter.cpython-311-darwin.so
+objc_exception_throw
+Runtime error when Tk is partially disabled
+RuntimeError: Too early to create image: no default root window
+Program runs briefly then exits
+
+The simulator starts but crashes when the Tk GUI initializes or updates.
+
+Why the Simulation Still Runs
+
+The Tk window is not required for the physics simulation.
+
+The simulator consists of two independent parts:
+
+Component	Purpose
+PyBullet	physics simulation and robot control
+Tkinter	visualization dashboard and manual control UI
+
+The robot simulation can run normally even if the Tk interface is disabled.
+
+Recommended Solution
+
+Disable the Tkinter GUI on macOS.
+
+Modify FactoryScene so the GUI is optional.
+
+Step 1: Add a flag
+class FactoryScene:
+    def __init__(self, use_tk=False):
+        self.use_tk = use_tk
+Step 2: Initialize the window only if needed
+
+Replace:
+
+self.initialize_tk_window()
+
+with:
+
+if self.use_tk:
+    self.initialize_tk_window()
+Step 3: Protect Tk window updates
+
+Replace:
+
+self.window.update()
+
+with:
+
+if self.use_tk:
+    self.window.update()
+Step 4: Disable Tk image updates
+
+Wrap all ImageTk.PhotoImage and label updates:
+
+if self.use_tk:
+    photo = ImageTk.PhotoImage(Image.fromarray(image))
+    self.label.configure(image=photo)
+Step 5: Launch the simulator without Tk
+factory_scene = FactoryScene(use_tk=False)
+Advantages of Disabling Tk
+Benefit	Description
+Stability	avoids macOS GUI crashes
+Simpler runtime	simulation runs headless
+Faster execution	removes GUI update overhead
+Cross-platform	avoids OS-specific Tk behavior
+
+PyBullet still provides its own GUI for visualizing the robot and environment.
+
+Alternative Fixes (Less Reliable)
+Run using pythonw
+
+Some macOS setups require launching GUI Python applications using:
+
+pythonw script.py
+
+This uses the macOS GUI-aware interpreter.
+
+However, this does not always resolve Tk crashes.
+
+Install python.app
+
+Conda provides a macOS GUI launcher:
+
+conda install -c conda-forge python.app
+
+Then run:
+
+pythonw script.py
+
+Again, results vary depending on the Tk build.
+
+When Tk Is Useful
+
+The Tk interface provides:
+
+interactive camera feeds
+
+robot motion buttons
+
+click-based map interaction
+
+path visualization
+
+If the simulator must use these features, a more robust GUI framework (such as PyQt or DearPyGUI) may be preferable.
+
+Summary
+
+The Tkinter control panel can crash on macOS due to conflicts between Tk, Python GUI launchers, and the macOS window system.
+
+The recommended approach is to disable the Tk GUI and run the simulator using PyBullet’s built-in visualization instead.
+
+This allows the GO2 simulator to run reliably on macOS systems.
